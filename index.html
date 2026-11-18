@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin - Sistem Keluar Masuk Pelajar</title>
+
+  <!-- FAVICON / LOGO TVET MARA (Paksa Browser Reload) -->
+  <link rel="icon" type="image/png" href="images/tvetmara.png?v=1.0">
+  <link rel="shortcut icon" type="image/x-icon" href="images/tvetmara.ico?v=1.0">
+  <link rel="apple-touch-icon" href="images/tvetmara.png?v=1.0">
+
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-full-blue">
+
+  <!-- SPLASH / WELCOME SCREEN -->
+  <div id="splash-screen" class="splash-container">
+    <div class="splash-content">
+      <img src="images/tvetmara.jpg" alt="Logo TVET MARA" class="splash-logo">
+      <h2 class="splash-title">Sistem Keluar Masuk Pelajar</h2>
+      <p class="splash-subtitle">TVETMARA MARA-JAPAN Industrial Institute</p>
+      <p id="welcome-text" class="welcome-text"></p>
+      <div class="spinner"></div>
+    </div>
+  </div>
+
+  <!-- BORANG LOG MASUK ADMIN -->
+  <div class="auth-card">
+    <h2>Log Masuk Felo / Admin</h2>
+    
+    <form id="adminLoginForm" onsubmit="handleAdminLogin(event)">
+      <div class="form-group">
+        <label for="adminUsername">ID / No. Gaji</label>
+        <input type="text" id="adminUsername" required placeholder="Masukkan ID / No. Gaji">
+      </div>
+
+      <div class="form-group">
+        <label for="adminPassword">Kata Laluan</label>
+        <input type="password" id="adminPassword" required placeholder="Masukkan kata laluan">
+      </div>
+
+      <button type="submit" id="btnLogin" class="btn btn-primary">
+        Log Masuk
+      </button>
+    </form>
+  </div>
+
+  <script>
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzPU4ApY4wS92Jn9JffV6Hz79oAI8WHNmCyIHRKhkwOlVd9QghCjDWgM6aclYB-PRVa-Q/exec";
+
+    window.addEventListener('DOMContentLoaded', () => {
+      const splash = document.getElementById('splash-screen');
+      const welcomeText = document.getElementById('welcome-text');
+      const adminUser = JSON.parse(localStorage.getItem('adminUser'));
+
+      if (adminUser) {
+        welcomeText.innerText = `Selamat Datang, ${adminUser.nama || 'Felo'}!`;
+        setTimeout(() => {
+          window.location.href = 'home.html';
+        }, 1800);
+      } else {
+        welcomeText.innerText = "Panel Kawalan Felo";
+        setTimeout(() => {
+          splash.classList.add('splash-hidden');
+        }, 1200);
+      }
+    });
+
+    function handleAdminLogin(e) {
+      e.preventDefault();
+      const usernameInput = document.getElementById('adminUsername').value.trim();
+      const passwordInput = document.getElementById('adminPassword').value.trim();
+      const btn = document.getElementById('btnLogin');
+
+      btn.disabled = true;
+      btn.innerText = "Memproses...";
+
+      fetch(SCRIPT_URL, {
+        method: 'POST',
+        headers: {
+          "Content-Type": "text/plain;charset=utf-8"
+        },
+        body: JSON.stringify({
+          action: 'adminLogin',
+          username: usernameInput,
+          password: passwordInput
+        })
+      })
+      .then(res => res.json())
+      .then(res => {
+        if (res.status === 'success') {
+          localStorage.setItem('adminUser', JSON.stringify(res.admin));
+          // Alert dibuang dan terus lencongkan ke home.html
+          window.location.href = 'home.html';
+        } else {
+          alert(res.message || "ID atau Kata Laluan Salah!");
+          btn.disabled = false;
+          btn.innerText = "Log Masuk";
+        }
+      })
+      .catch(err => {
+        console.error(err);
+        alert("Gagal berhubung dengan server. Sila semak pautan Apps Script anda.");
+        btn.disabled = false;
+        btn.innerText = "Log Masuk";
+      });
+    }
+  </script>
+</body>
+</html>

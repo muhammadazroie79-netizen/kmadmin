@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pengimbas QR - Sistem MJII</title>
+
+  <link rel="icon" type="image/png" href="images/tvetmara.png?v=1.0">
+  <link rel="shortcut icon" type="image/x-icon" href="images/tvetmara.ico?v=1.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="images/tvetmara.png?v=1.0">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Sistem MJII">
+  <meta name="theme-color" content="#002B66">
+
+  <link rel="stylesheet" href="style.css">
+  <script src="https://unpkg.com/html5-qrcode"></script>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f4f6f9; margin: 0; padding: 0; }
+    .scanner-card { background: white; padding: 20px; border-radius: 12px; max-width: 400px; margin: auto; box-shadow: 0 4px 10px rgba(0,0,0,0.1); text-align: center; }
+    #reader { width: 100%; border-radius: 8px; overflow: hidden; border: 2px solid #002B66; margin-top: 10px; }
+    #statusMsg { font-weight: bold; margin-top: 15px; min-height: 40px; font-size: 0.95rem; white-space: pre-line; }
+    .success { color: #2e7d32; }
+    .error { color: #d32f2f; }
+  </style>
+</head>
+<body>
+
+  <header class="main-header">
+    <div class="header-left">
+      <a href="home.html" class="logo-button">
+        <img src="images/tvetmara.jpg" alt="Logo TVET MARA">
+      </a>
+      <div class="brand-title">
+        <h1>Sistem Keluar Masuk Pelajar</h1>
+        <p>TVETMARA MARA-Japan Industrial Institute (MJII)</p>
+      </div>
+    </div>
+  </header>
+
+  <div class="main-container" style="padding: 20px; max-width: 500px; margin: auto; margin-bottom: 80px;">
+    <div class="scanner-card">
+      <h2 style="color: #002B66; margin-bottom: 5px;">Pengimbas QR Pintu Pagar</h2>
+      <p style="font-size: 0.85rem; color: #555;">Halakan kamera ke QR Code pelajar</p>
+      
+      <div id="reader"></div>
+      <div id="statusMsg">Sedia untuk mengimbas...</div>
+    </div>
+  </div>
+
+  <footer style="text-align: center; padding: 20px 0; font-size: 0.8rem; color: #666;">
+    <div class="footer-copy">© 2026 Sistem Keluar Masuk Pelajar TVETMARA MJII. Hak Cipta Terpelihara.</div>
+    <div class="footer-credit">Designed & Developed by @mhdzriyy</div>
+  </footer>
+
+  <script>
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw3x0HLZ3GDk9Difuz4gHaOkLEBSYH550jA0kQ1IZTsD6Ei6RNOkkGhQiIXKgG6bDNP/exec";
+    
+    let html5QrCode = null;
+    let selectedCameraId = null;
+    let isProcessing = false;
+
+    window.addEventListener('DOMContentLoaded', initCameraAndScanner);
+
+    function playBeepSound() {
+      try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+
+        oscillator.type = 'sine';
+        oscillator.frequency.setValueAtTime(880, audioCtx.currentTime);
+        gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+
+        oscillator.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+
+        oscillator.start();
+        oscillator.stop(audioCtx.currentTime + 0.15);
+      } catch (e) {
+        console.warn("Gagal memainkan bunyi beep:", e);
+      }
+    }
+
+    function initCameraAndScanner() {
+      html5QrCode = new Html5Qrcode("reader");
+
+      Html5Qrcode.getCameras().then(devices => {
+        if (devices && devices.length) {
+          const backCamera = devices.find(device => device.label.toLowerCase().includes('back') || device.label.toLowerCase().includes('rear'));
+          selectedCameraId = backCamera ? backCamera.id : devices[0].id;
+          startScanning();
+        } else {
+          document.getElementById('statusMsg').className = "error";
+          document.getElementById('statusMsg').innerText = "Kamera tidak dijumpai pada peranti ini.";
+        }
+      }).catch(err => {
+        console.error("Gagal mendapatkan akses kamera:", err);
+        document.getElementById('statusMsg').className = "error";
+        document.getElementById('statusMsg').innerText = "Sila benarkan akses kamera untuk mengimbas.";
+      });
+    }
+
+    function startScanning() {
+      if (!selectedCameraId || !html5QrCode) return;
+
+      html5QrCode.start(
+        selectedCameraId, 
+        { fps: 10, qrbox: { width: 250, height: 250 } },
+        onScanSuccess,
+        onScanFailure
+      ).catch(err => console.error("Gagal memulakan imbasan:", err));
+    }
+
+    function onScanSuccess(decodedText, decodedResult) {
+      if (isProcessing) return;
+      isProcessing = true;
+
+      playBeepSound();
+
+      const statusMsg = document.getElementById('statusMsg');
+      statusMsg.className = "";
+      statusMsg.innerText = "QR Dikesan! Menghantar data ke sistem...";
+
+      html5QrCode.stop().then(() => {
+        
+        // Split data QR: NO_MATRIK|ACTION|NAMA|ALASAN|TIMESTAMP|GAMBAR_BASE64
+        const dataParts = decodedText.split('|');
+        
+        if (dataParts.length < 4) {
+          statusMsg.className = "error";
+          statusMsg.innerText = "Format QR Code tidak sah!";
+          setTimeout(resetScanner, 2000);
+          return;
+        }
+
+        const noMatrik = dataParts[0];
+        const actionType = dataParts[1];
+        const namaPenuh = dataParts[2];
+        const alasan = dataParts[3];
+        const gambarBase64 = dataParts[5] || ""; // Ambil gambar dari QR jika wujud
+
+        const payload = {
+          action: actionType === 'KELUAR' ? 'rekodKeluar' : 'rekodMasuk',
+          noMatrik: noMatrik,
+          namaPenuh: namaPenuh,
+          alasan: alasan,
+          gambarBase64: gambarBase64
+        };
+
+        fetch(SCRIPT_URL, {
+          method: 'POST',
+          body: JSON.stringify(payload)
+        })
+        .then(res => res.json())
+        .then(res => {
+          if (res.status !== 'success') {
+            // Memaparkan mesej ralat sekiranya pemprosesan gagal
+            statusMsg.className = "error";
+            statusMsg.innerText = `❌ GAGAL: ${res.message}`;
+            setTimeout(resetScanner, 2000);
+          } else {
+            // Jika berjaya, mengimbas semula serta-merta tanpa paparan kejayaan
+            resetScanner();
+          }
+        })
+        .catch(err => {
+          console.error(err);
+          statusMsg.className = "error";
+          statusMsg.innerText = "Ralat Rangkaian/Server!";
+          setTimeout(resetScanner, 2000);
+        });
+
+      }).catch(err => console.error("Ralat menghentikan imbasan:", err));
+    }
+
+    function onScanFailure(error) {
+      // Abaikan ralat kecil imbasan
+    }
+
+    function resetScanner() {
+      isProcessing = false;
+      const statusMsg = document.getElementById('statusMsg');
+      statusMsg.className = "";
+      statusMsg.innerText = "Sedia untuk mengimbas...";
+      startScanning();
+    }
+  </script>
+  
+</body>
+</html>

@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard Admin - Sistem MJII</title>
+  <link rel="stylesheet" href="style.css">
+
+  <!-- FAVICON / LOGO TVET MARA (Paksa Browser Reload) -->
+  <link rel="icon" type="image/png" href="images/tvetmara.png?v=1.0">
+  <link rel="shortcut icon" type="image/x-icon" href="images/tvetmara.ico?v=1.0">
+  <link rel="apple-touch-icon" href="images/tvetmara.png?v=1.0">
+
+  <style>
+    /* REKABENTUK HEADER BAHARU */
+    .header-actions {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .nav-btn-pill {
+      background: rgba(255, 255, 255, 0.15);
+      color: white;
+      text-decoration: none;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      transition: background 0.2s;
+    }
+
+    .nav-btn-pill:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+
+    .notif-circle-btn {
+      width: 38px;
+      height: 38px;
+      background: rgba(255, 255, 255, 0.15);
+      color: white;
+      text-decoration: none;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      transition: background 0.2s;
+    }
+
+    .notif-circle-btn:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+
+    /* KAD STATISTIK & KAD KLIK */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    
+    .stat-card {
+      background: white;
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+      text-align: center;
+      border-left: 4px solid var(--mara-blue, #002B66);
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 10px rgba(0,0,0,0.12);
+    }
+
+    .stat-card.active-card {
+      background: #eef4ff;
+      border-left-width: 6px;
+    }
+
+    .stat-card.alert {
+      border-left-color: #f57c00;
+    }
+
+    .stat-card.info {
+      border-left-color: #0288d1;
+    }
+
+    .stat-card h3 {
+      font-size: 1.5rem;
+      color: var(--mara-blue, #002B66);
+      margin-bottom: 2px;
+    }
+
+    .stat-card p {
+      font-size: 0.75rem;
+      color: #666;
+      font-weight: 600;
+    }
+
+    /* KAWASAN CARIAN & PENAPIS */
+    .filter-container {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 15px;
+      flex-wrap: wrap;
+    }
+
+    .search-box {
+      flex: 2;
+      min-width: 200px;
+    }
+
+    .search-box input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      box-sizing: border-box;
+    }
+
+    .filter-box {
+      flex: 1;
+      min-width: 140px;
+    }
+
+    .filter-box select, .filter-box input[type="date"] {
+      width: 100%;
+      padding: 9px 12px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      background: white;
+      box-sizing: border-box;
+    }
+
+    /* REKA BENTUK JADUAL RESPONSIP & FULL WIDTH */
+    .table-container {
+      width: 100%;
+      background: white;
+      border-radius: 8px;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+      margin-top: 10px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.88rem;
+      min-width: 600px;
+    }
+
+    th {
+      background-color: var(--mara-blue, #002B66);
+      color: white;
+      padding: 12px 10px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    td {
+      padding: 10px;
+      border-bottom: 1px solid #eee;
+      white-space: nowrap;
+    }
+
+    tr:nth-child(even) {
+      background-color: #fcfcfc;
+    }
+
+    .badge {
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 0.72rem;
+      font-weight: bold;
+      display: inline-block;
+    }
+
+    .badge-out { background-color: #ffe0b2; color: #e65100; }
+    .badge-in { background-color: #c8e6c9; color: #2e7d32; }
+
+    /* PENYESUAIAN PADA PAPARAN TELEFON BIMBIT */
+    @media screen and (max-width: 600px) {
+      .main-container {
+        padding: 10px 0 !important;
+      }
+
+      .table-container {
+        border-radius: 0;
+      }
+
+      .stats-grid, .filter-container {
+        padding: 0 10px;
+      }
+
+      th, td {
+        padding: 10px 8px;
+        font-size: 0.8rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header class="main-header" style="background-color: #002B66; padding: 10px 20px;">
+    <div class="header-left">
+      <a href="home.html" class="logo-button">
+        <img src="images/tvetmara.jpg" alt="Logo TVET MARA">
+      </a>
+      <div class="brand-title">
+        <h1 style="color: white; margin: 0; font-size: 1.2rem;">Panel Felo</h1>
+        <p style="color: #ccc; margin: 0; font-size: 0.8rem;">TVETMARA MARA-JAPAN Industrial Institute</p>
+      </div>
+    </div>
+    
+    <div class="header-actions">
+      <a href="scanner.html" class="nav-btn-pill" title="Imbas QR Pelajar">
+        📷
+      </a>
+
+      <a href="notif.html" class="notif-circle-btn" title="Notifikasi">
+        🔔
+      </a>
+
+      <button onclick="logoutAdmin()" class="btn btn-logout" style="padding: 6px 12px; cursor: pointer;">Log Keluar</button>
+    </div>
+  </header>
+
+  <!-- CONTAINER UTAMA -->
+  <div class="main-container" style="max-width: 1000px; margin: 20px auto; padding: 0 15px;">
+    
+    <!-- KAD STATISTIK & PENAPIS PANTAS -->
+    <div class="stats-grid">
+      <div class="stat-card info" style="cursor: default;">
+        <h3 id="statJumlahPelajar" style="color: #0288d1;">585</h3>
+        <p>JUMLAH PELAJAR</p>
+      </div>
+
+      <div class="stat-card" id="cardHarian" onclick="selectCategoryFilter('harian')">
+        <h3 id="statHarian">0</h3>
+        <p>OUTING HARIAN (DI LUAR)</p>
+      </div>
+      
+      <div class="stat-card alert" id="cardBermalam" onclick="selectCategoryFilter('bermalam')">
+        <h3 id="statBermalam">0</h3>
+        <p>OUTING BERMALAM (DI LUAR)</p>
+      </div>
+      
+      <a href="daftar_felo.html" style="text-decoration: none; color: inherit;">
+        <div class="stat-card" style="border-left-color: #388e3c; cursor: pointer;">
+          <h3 style="color: #388e3c;">+</h3>
+          <p>DAFTAR FELO</p>
+        </div>
+      </a>
+    </div>
+
+    <!-- CARIAN NAMA, KALENDAR TARIKH, ALASAN & STATUS -->
+    <div class="filter-container">
+      <div class="search-box">
+        <input type="text" id="searchInput" placeholder="🔍 Cari Nama Pelajar..." onkeyup="filterTable()">
+      </div>
+
+      <div class="filter-box">
+        <input type="date" id="dateFilter" onchange="filterTable()">
+      </div>
+
+      <!-- PENAPIS ALASAN KEMASKINI (OUTING BERMALAM DIBUANG) -->
+      <div class="filter-box">
+        <select id="alasanFilter" onchange="filterTable()">
+          <option value="">-- Semua Alasan --</option>
+          <option value="harian">Outing Harian</option>
+          <option value="balik rumah">Balik Rumah</option>
+          <option value="urusan rasmi">Urusan Rasmi Kolej</option>
+          <option value="lain-lain">Lain-lain</option>
+        </select>
+      </div>
+
+      <!-- PENAPIS STATUS -->
+      <div class="filter-box">
+        <select id="statusFilter" onchange="filterTable()">
+          <option value="">-- Semua Status --</option>
+          <option value="KELUAR">Masih Di Luar</option>
+          <option value="MASUK">Telah Masuk</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- JADUAL REKOD -->
+    <div class="table-container">
+      <table id="recordsTable">
+        <thead>
+          <tr>
+            <th>Id Pelajar</th>
+            <th>Nama Pelajar</th>
+            <th>Masa Keluar</th>
+            <th>Masa Masuk</th>
+            <th>Alasan</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody">
+          <tr>
+            <td colspan="6" style="text-align: center; color: #888; padding: 20px;">Memuatkan rekod...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+
+  <!-- FOOTER -->
+  <footer style="text-align: center; padding: 20px 0; font-size: 0.8rem; color: #666;">
+    <div class="footer-copy">© 2026 Sistem Keluar Masuk Pelajar TVETMARA MJII. Hak Cipta Terpelihara.</div>
+    <div class="footer-credit">Designed & Developed by @mhdzriyy</div>
+  </footer>
+
+  <script>
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw3x0HLZ3GDk9Difuz4gHaOkLEBSYH550jA0kQ1IZTsD6Ei6RNOkkGhQiIXKgG6bDNP/exec";
+    let allRecords = [];
+    let currentCategoryMode = "";
+
+    const MONTH_MAP = {
+      jan: '01', feb: '02', mar: '03', apr: '04', may: '05', jun: '06',
+      jul: '07', aug: '08', sep: '09', oct: '10', nov: '11', dec: '12'
+    };
+
+    window.addEventListener('DOMContentLoaded', () => {
+      const today = new Date();
+      const yyyy = today.getFullYear();
+      const mm = String(today.getMonth() + 1).padStart(2, '0');
+      const dd = String(today.getDate()).padStart(2, '0');
+      document.getElementById('dateFilter').value = `${yyyy}-${mm}-${dd}`;
+
+      fetchRecords();
+      setInterval(fetchRecords, 3000);
+    });
+
+    function cleanTimeString(timeStr) {
+      if (!timeStr || timeStr === '-' || timeStr.trim() === '') return '-';
+
+      let str = timeStr.toString().split(' GMT')[0].split(' (+')[0].replace('T', ' ').replace('.000Z', '').trim();
+
+      const monthMatch = str.match(/(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)/i);
+      if (monthMatch) {
+        const mStr = monthMatch[0].toLowerCase();
+        const monthNum = MONTH_MAP[mStr];
+        const nums = str.match(/\d+/g);
+        
+        if (nums && nums.length >= 2) {
+          let day = String(nums[0]).padStart(2, '0');
+          let year = nums[1];
+          let time = nums.length >= 5 ? ` ${String(nums[2]).padStart(2, '0')}:${String(nums[3]).padStart(2, '0')}:${String(nums[4]).padStart(2, '0')}` : '';
+          
+          return `${day}/${monthNum}/${year}${time}`;
+        }
+      }
+
+      if (str.includes('/')) {
+        const parts = str.split(' ');
+        const dateParts = parts[0].split('/');
+
+        if (dateParts.length === 3) {
+          let p1 = dateParts[0].padStart(2, '0');
+          let p2 = dateParts[1].padStart(2, '0');
+          let p3 = dateParts[2];
+
+          let day = p1, month = p2, year = p3;
+          if (p1.length === 4) {
+            year = p1; month = p2; day = p3;
+          }
+
+          const timePart = parts.slice(1).join(' ');
+          return `${day}/${month}/${year}${timePart ? ' ' + timePart : ''}`;
+        }
+      }
+
+      if (/^\d{4}-\d{2}-\d{2}/.test(str)) {
+        const parts = str.split(' ');
+        const p = parts[0].split('-');
+        const timePart = parts.length > 1 ? ' ' + parts[1] : '';
+        return `${p[2].padStart(2, '0')}/${p[1].padStart(2, '0')}/${p[0]}${timePart}`;
+      }
+
+      return str;
+    }
+
+    function parseDateCustom(dateVal) {
+      if (!dateVal || dateVal === '-' || dateVal.trim() === '') return null;
+
+      const formatted = cleanTimeString(dateVal);
+
+      if (formatted.includes('/')) {
+        const dateOnly = formatted.split(' ')[0];
+        const parts = dateOnly.split('/');
+        if (parts.length === 3) {
+          return {
+            day: parseInt(parts[0], 10),
+            month: parseInt(parts[1], 10),
+            year: parseInt(parts[2], 10)
+          };
+        }
+      }
+      return null;
+    }
+
+    function fetchRecords() {
+      fetch(`${SCRIPT_URL}?action=getRecords`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.status === "success") {
+            allRecords = data.records;
+            filterTable();
+            updateStats(allRecords);
+          }
+        })
+        .catch(err => {
+          console.error("Ralat memuatkan rekod:", err);
+        });
+    }
+
+    function renderTable(records) {
+      const tbody = document.getElementById('tableBody');
+      tbody.innerHTML = "";
+
+      if (!records || records.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: #888; padding: 15px;">Tiada rekod ditemui.</td></tr>`;
+        return;
+      }
+
+      records.forEach(row => {
+        const isOut = (row.status || '').toUpperCase().trim() === "KELUAR";
+        const badgeClass = isOut ? "badge-out" : "badge-in";
+        const statusText = isOut ? "Di Luar" : "Telah Masuk";
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><strong>${row.noMatrik || '-'}</strong></td>
+          <td>${row.namaPelajar || '-'}</td>
+          <td>${cleanTimeString(row.masaKeluar)}</td>
+          <td>${cleanTimeString(row.masaMasuk)}</td>
+          <td>${row.alasan || '-'}</td>
+          <td><span class="badge ${badgeClass}">${statusText}</span></td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function updateStats(records) {
+      let harianCount = 0;
+      let bermalamCount = 0;
+
+      records.forEach(row => {
+        const alasan = (row.alasan || '').toLowerCase();
+        const status = (row.status || '').toUpperCase().trim();
+
+        if (status === "KELUAR") {
+          if (alasan.includes('harian') || alasan.includes('sekejap')) {
+            harianCount++;
+          } else if (alasan.includes('bermalam') || alasan.includes('balik rumah') || alasan.includes('urusan rasmi')) {
+            bermalamCount++;
+          }
+        }
+      });
+
+      document.getElementById('statHarian').innerText = harianCount;
+      document.getElementById('statBermalam').innerText = bermalamCount;
+    }
+
+    function selectCategoryFilter(type) {
+      const cardHarian = document.getElementById('cardHarian');
+      const cardBermalam = document.getElementById('cardBermalam');
+
+      if (currentCategoryMode === type) {
+        currentCategoryMode = "";
+        cardHarian.classList.remove('active-card');
+        cardBermalam.classList.remove('active-card');
+      } else {
+        currentCategoryMode = type;
+        if (type === 'harian') {
+          cardHarian.classList.add('active-card');
+          cardBermalam.classList.remove('active-card');
+        } else {
+          cardBermalam.classList.add('active-card');
+          cardHarian.classList.remove('active-card');
+        }
+        
+        document.getElementById('statusFilter').value = "KELUAR";
+      }
+      filterTable();
+    }
+
+    function filterTable() {
+      const nameQuery = document.getElementById('searchInput').value.toLowerCase().trim();
+      const selectedDateStr = document.getElementById('dateFilter').value;
+      const selectedAlasan = document.getElementById('alasanFilter').value.toLowerCase().trim();
+      const selectedStatus = document.getElementById('statusFilter').value.toUpperCase().trim();
+
+      const standardKeywords = ["harian", "sekejap", "balik rumah", "urusan rasmi", "bermalam"];
+
+      let targetD = null, targetM = null, targetY = null;
+      if (selectedDateStr) {
+        const p = selectedDateStr.split('-');
+        targetY = parseInt(p[0], 10);
+        targetM = parseInt(p[1], 10);
+        targetD = parseInt(p[2], 10);
+      }
+
+      const filtered = allRecords.filter(r => {
+        const nama = (r.namaPelajar || '').toLowerCase();
+        const alasan = (r.alasan || '').toLowerCase().trim();
+        const status = (r.status || '').toUpperCase().trim();
+
+        const parsed = parseDateCustom(r.masaKeluar);
+
+        const matchesName = nameQuery === '' || nama.includes(nameQuery);
+
+        let matchesDate = true;
+        if (selectedDateStr && currentCategoryMode === "") {
+          matchesDate = parsed && (parsed.day === targetD) && (parsed.month === targetM) && (parsed.year === targetY);
+        }
+
+        let matchesCategory = true;
+        if (currentCategoryMode === 'harian') {
+          matchesCategory = status === "KELUAR" && (alasan.includes('harian') || alasan.includes('sekejap'));
+        } else if (currentCategoryMode === 'bermalam') {
+          matchesCategory = status === "KELUAR" && (alasan.includes('bermalam') || alasan.includes('balik rumah') || alasan.includes('urusan rasmi'));
+        }
+
+        let matchesAlasan = true;
+        if (selectedAlasan === "lain-lain") {
+          matchesAlasan = alasan !== '' && !standardKeywords.some(kw => alasan.includes(kw));
+        } else if (selectedAlasan === "harian") {
+          matchesAlasan = alasan.includes('harian') || alasan.includes('sekejap');
+        } else if (selectedAlasan !== '') {
+          matchesAlasan = alasan.includes(selectedAlasan);
+        }
+
+        let matchesStatus = true;
+        if (currentCategoryMode !== "") {
+          matchesStatus = status === "KELUAR";
+        } else if (selectedStatus !== '') {
+          matchesStatus = status === selectedStatus;
+        }
+
+        return matchesName && matchesDate && matchesCategory && matchesAlasan && matchesStatus;
+      });
+
+      renderTable(filtered);
+    }
+
+    function logoutAdmin() {
+      if (confirm("Adakah anda pasti untuk log keluar?")) {
+        localStorage.removeItem('adminUser');
+        window.location.href = 'index.html';
+      }
+    }
+  </script>
+</body>
+</html>

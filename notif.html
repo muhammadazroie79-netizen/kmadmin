@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Notifikasi & Pelanggaran Curfew - Sistem MJII</title>
+
+  <!-- FAVICON / LOGO TVET MARA (Paksa Browser Reload) -->
+  <link rel="icon" type="image/png" href="images/tvetmara.png?v=1.0">
+  <link rel="shortcut icon" type="image/x-icon" href="images/tvetmara.ico?v=1.0">
+  <link rel="apple-touch-icon" href="images/tvetmara.png?v=1.0">
+
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .notif-container {
+      max-width: 900px;
+      margin: 20px auto;
+      padding: 0 15px;
+    }
+
+    .notif-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .notif-card {
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+      margin-bottom: 12px;
+      overflow: hidden;
+      border-left: 5px solid #d32f2f;
+    }
+
+    .notif-summary {
+      padding: 15px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      background: #fff;
+      transition: background 0.2s;
+    }
+
+    .notif-summary:hover {
+      background: #f9f9f9;
+    }
+
+    .student-info h3 {
+      margin: 0;
+      font-size: 1.05rem;
+      color: #002B66;
+    }
+
+    .student-info p {
+      margin: 3px 0 0 0;
+      font-size: 0.8rem;
+      color: #666;
+    }
+
+    .warning-badge {
+      padding: 5px 12px;
+      border-radius: 15px;
+      font-size: 0.75rem;
+      font-weight: bold;
+      color: white;
+    }
+
+    .warning-1 { background-color: #ffa726; } /* Amaran 1 */
+    .warning-2 { background-color: #fb8c00; } /* Amaran 2 */
+    .warning-3 { background-color: #d32f2f; } /* Amaran 3 ke atas */
+
+    .notif-details {
+      display: none;
+      padding: 15px 20px;
+      background: #fafafa;
+      border-top: 1px solid #eee;
+    }
+
+    .details-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 15px;
+      font-size: 0.85rem;
+    }
+
+    .details-table th, .details-table td {
+      padding: 8px 10px;
+      text-align: left;
+      border-bottom: 1px solid #e0e0e0;
+    }
+
+    .details-table th {
+      background-color: #f0f4f8;
+      color: #333;
+    }
+
+    .reason-cell {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .felo-select {
+      padding: 4px 8px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+      font-size: 0.8rem;
+      background: white;
+      color: #333;
+      cursor: pointer;
+    }
+
+    .action-btn-container {
+      text-align: right;
+    }
+
+    .btn-action {
+      background: #d32f2f;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 0.85rem;
+      transition: background 0.2s;
+    }
+
+    .btn-action:hover {
+      background: #b71c1c;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      background: white;
+      border-radius: 8px;
+      color: #777;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    }
+  </style>
+</head>
+<body>
+
+  <header class="main-header">
+    <div class="header-left">
+      <a href="home.html" class="logo-button">
+        <img src="images/tvetmara.jpg" alt="Logo TVET MARA">
+      </a>
+      <div class="brand-title">
+        <h1>Panel Felo</h1>
+        <p>TVETMARA MARA-JAPAN Industrial Institute</p>
+      </div>
+    </div>
+    <div>
+      <a href="home.html" class="btn" style="padding: 6px 12px; background: #002B66; color: white; text-decoration: none; border-radius: 4px; font-size: 0.85rem;">Kembali ke Utama</a>
+    </div>
+  </header>
+
+  <div class="notif-container">
+    
+    <div class="notif-header">
+      <h2 style="color: #002B66; font-size: 1.2rem; margin: 0;">Senarai Pelajar Masuk Luar Waktu Curfew</h2>
+      <button onclick="fetchNotifRecords()" style="padding: 6px 12px; cursor: pointer; border-radius: 4px; border: 1px solid #ccc; background: white;">🔄 Muat Semula</button>
+    </div>
+
+    <div id="notifList">
+      <div class="empty-state">Memuatkan dan mengira rekod curfew...</div>
+    </div>
+
+  </div>
+
+  <footer style="text-align: center; padding: 20px 0; font-size: 0.8rem; color: #666;">
+    <div class="footer-copy">© 2026 Sistem Keluar Masuk Pelajar TVETMARA MJII. Hak Cipta Terpelihara.</div>
+    <div class="footer-credit">Designed & Developed by @mhdzriyy</div>
+  </footer>
+
+  <script>
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw3x0HLZ3GDk9Difuz4gHaOkLEBSYH550jA0kQ1IZTsD6Ei6RNOkkGhQiIXKgG6bDNP/exec";
+    
+    const MONTH_MAP = {
+      jan: '01', feb: '02', mar: '03', apr: '04', may: '05', jun: '06',
+      jul: '07', aug: '08', sep: '09', oct: '10', nov: '11', dec: '12'
+    };
+
+    window.addEventListener('DOMContentLoaded', () => {
+      fetchNotifRecords();
+    });
+
+    // FUNGSI UTAMA UNTUK MEMBERSIHKAN MASA
+    function cleanTimeString(timeStr) {
+      if (!timeStr || timeStr === '-' || timeStr.trim() === '') return '-';
+
+      let str = timeStr.toString().split(' GMT')[0].split(' (+')[0].replace('T', ' ').replace('.000Z', '').trim();
+
+      const monthMatch = str.match(/(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)/i);
+      if (monthMatch) {
+        const mStr = monthMatch[0].toLowerCase();
+        const monthNum = MONTH_MAP[mStr];
+        const nums = str.match(/\d+/g);
+        
+        if (nums && nums.length >= 2) {
+          let day = String(nums[0]).padStart(2, '0');
+          let year = nums[1];
+          let time = nums.length >= 5 ? ` ${String(nums[2]).padStart(2, '0')}:${String(nums[3]).padStart(2, '0')}:${String(nums[4]).padStart(2, '0')}` : '';
+          
+          return `${day}/${monthNum}/${year}${time}`;
+        }
+      }
+
+      if (str.includes('/')) {
+        const parts = str.split(' ');
+        const dateParts = parts[0].split('/');
+
+        if (dateParts.length === 3) {
+          let p1 = dateParts[0].padStart(2, '0');
+          let p2 = dateParts[1].padStart(2, '0');
+          let p3 = dateParts[2];
+
+          let day = p1, month = p2, year = p3;
+          if (p1.length === 4) {
+            year = p1; month = p2; day = p3;
+          }
+
+          const timePart = parts.slice(1).join(' ');
+          return `${day}/${month}/${year}${timePart ? ' ' + timePart : ''}`;
+        }
+      }
+
+      if (/^\d{4}-\d{2}-\d{2}/.test(str)) {
+        const parts = str.split(' ');
+        const p = parts[0].split('-');
+        const timePart = parts.length > 1 ? ' ' + parts[1] : '';
+        return `${p[2].padStart(2, '0')}/${p[1].padStart(2, '0')}/${p[0]}${timePart}`;
+      }
+
+      return str;
+    }
+
+    // PARSE DATE-TIME DALAM FORMAT JS DATE OBJECT
+    function parseToDateObj(timeStr) {
+      if (!timeStr || timeStr === '-' || timeStr.trim() === '') return null;
+
+      let str = timeStr.toString().split(' GMT')[0].split(' (+')[0].replace('T', ' ').replace('.000Z', '').trim();
+
+      const isPM = /pm/i.test(str);
+      const isAM = /am/i.test(str);
+
+      let cleanStr = str.replace(/am|pm/gi, '').trim();
+
+      const monthMatch = cleanStr.match(/(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)/i);
+      if (monthMatch) {
+        const mStr = monthMatch[0].toLowerCase();
+        const monthIndex = parseInt(MONTH_MAP[mStr], 10) - 1;
+        const nums = cleanStr.match(/\d+/g);
+        if (nums && nums.length >= 2) {
+          let day = parseInt(nums[0], 10);
+          let year = parseInt(nums[1], 10);
+          let h = nums.length >= 3 ? parseInt(nums[2], 10) : 0;
+          let m = nums.length >= 4 ? parseInt(nums[3], 10) : 0;
+          let s = nums.length >= 5 ? parseInt(nums[4], 10) : 0;
+
+          if (isPM && h < 12) h += 12;
+          if (isAM && h === 12) h = 0;
+
+          return new Date(year, monthIndex, day, h, m, s);
+        }
+      }
+
+      if (cleanStr.includes('/') || cleanStr.includes('-')) {
+        const parts = cleanStr.split(' ');
+        const dateParts = parts[0].includes('/') ? parts[0].split('/') : parts[0].split('-');
+        let timeParts = parts[1] ? parts[1].split(':') : [0, 0, 0];
+
+        let day, month, year;
+        if (dateParts[0].length === 4) {
+          year = parseInt(dateParts[0], 10);
+          month = parseInt(dateParts[1], 10) - 1;
+          day = parseInt(dateParts[2], 10);
+        } else {
+          day = parseInt(dateParts[0], 10);
+          month = parseInt(dateParts[1], 10) - 1;
+          year = parseInt(dateParts[2], 10);
+        }
+
+        let h = parseInt(timeParts[0] || 0, 10);
+        let m = parseInt(timeParts[1] || 0, 10);
+        let s = parseInt(timeParts[2] || 0, 10);
+
+        if (isPM && h < 12) h += 12;
+        if (isAM && h === 12) h = 0;
+
+        return new Date(year, month, day, h, m, s);
+      }
+
+      let nativeDate = new Date(str);
+      return isNaN(nativeDate.getTime()) ? null : nativeDate;
+    }
+
+    // LOGIK CURFEW
+    function isCurfewViolated(masaKeluarStr, masaMasukStr, alasanStr) {
+      const alasan = (alasanStr || '').toLowerCase().trim();
+
+      if (alasan.includes("keluar dengan kebenaran")) {
+        return false;
+      }
+
+      const dateKeluar = parseToDateObj(masaKeluarStr);
+      const dateMasuk = parseToDateObj(masaMasukStr);
+
+      if (dateKeluar && checkOutBounds(dateKeluar)) return true;
+      if (dateMasuk && checkOutBounds(dateMasuk)) return true;
+
+      return false;
+    }
+
+    function checkOutBounds(dateObj) {
+      const day = dateObj.getDay(); 
+      const hours = dateObj.getHours();
+      const mins = dateObj.getMinutes();
+      const timeInMinutes = hours * 60 + mins;
+
+      // Isnin - Jumaat: 13:00 hingga 22:00
+      if (day >= 1 && day <= 5) {
+        const start = 13 * 60; 
+        const end = 22 * 60;   
+        if (timeInMinutes < start || timeInMinutes > end) return true;
+      } 
+      // Sabtu & Ahad: 07:00 hingga 23:00
+      else {
+        const start = 7 * 60;  
+        const end = 23 * 60;   
+        if (timeInMinutes < start || timeInMinutes > end) return true;
+      }
+
+      return false;
+    }
+
+    function fetchNotifRecords() {
+      const container = document.getElementById('notifList');
+      container.innerHTML = `<div class="empty-state">Memuatkan dan mengira rekod curfew...</div>`;
+
+      fetch(`${SCRIPT_URL}?action=getRecords`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.status === "success") {
+            processViolations(data.records);
+          }
+        })
+        .catch(err => {
+          container.innerHTML = `<div class="empty-state" style="color: red;">Ralat memuatkan data. Sila cuba lagi.</div>`;
+          console.error(err);
+        });
+    }
+
+    function processViolations(records) {
+      const dismissedIds = JSON.parse(localStorage.getItem('dismissedCurfewRecords') || '[]');
+      const studentMap = {};
+
+      records.forEach(row => {
+        const recordId = `${row.noMatrik}_${row.masaKeluar}`;
+        if (dismissedIds.includes(recordId)) return;
+
+        if (isCurfewViolated(row.masaKeluar, row.masaMasuk, row.alasan)) {
+          const key = (row.noMatrik && row.noMatrik !== '-') ? row.noMatrik.trim() : row.namaPelajar.trim();
+
+          if (!studentMap[key]) {
+            studentMap[key] = {
+              noMatrik: row.noMatrik || '-',
+              namaPelajar: row.namaPelajar || 'Nama Tidak Diketahui',
+              violations: []
+            };
+          }
+          studentMap[key].violations.push({
+            recordId: recordId,
+            masaKeluar: row.masaKeluar,
+            masaMasuk: row.masaMasuk,
+            alasan: row.alasan || '-'
+          });
+        }
+      });
+
+      renderNotifList(studentMap);
+    }
+
+    function renderNotifList(studentMap) {
+      const container = document.getElementById('notifList');
+      container.innerHTML = "";
+
+      const keys = Object.keys(studentMap);
+
+      if (keys.length === 0) {
+        container.innerHTML = `<div class="empty-state">✅ Tiada pelajar melanggar waktu curfew buat masa ini.</div>`;
+        return;
+      }
+
+      // Ambil data catatan felo yang telah disimpan
+      const feloRemarks = JSON.parse(localStorage.getItem('feloRemarks') || '{}');
+
+      keys.forEach(key => {
+        const student = studentMap[key];
+        const count = student.violations.length;
+
+        // Amaran dinamik tanpa had limit 3
+        const warningText = `Amaran ${count}`;
+        let warningClass = "warning-3";
+        if (count === 1) warningClass = "warning-1";
+        else if (count === 2) warningClass = "warning-2";
+
+        const card = document.createElement('div');
+        card.className = "notif-card";
+
+        let rowsHtml = "";
+        student.violations.forEach((v, index) => {
+          const currentRemark = feloRemarks[v.recordId] || '';
+
+          rowsHtml += `
+            <tr>
+              <td>${index + 1}</td>
+              <td>${cleanTimeString(v.masaKeluar)}</td>
+              <td>${cleanTimeString(v.masaMasuk)}</td>
+              <td>
+                <div class="reason-cell">
+                  <span>${v.alasan}</span>
+                  <select class="felo-select" onchange="saveFeloRemark('${v.recordId}', this.value)">
+                    <option value="" ${currentRemark === '' ? 'selected' : ''}>-- Status Felo --</option>
+                    <option value="Felo Ambil Maklum" ${currentRemark === 'Felo Ambil Maklum' ? 'selected' : ''}>Felo Ambil Maklum</option>
+                    <option value="Cuti Am" ${currentRemark === 'Cuti Am' ? 'selected' : ''}>Cuti Am</option>
+                    <option value="Cuti Khas" ${currentRemark === 'Cuti Khas' ? 'selected' : ''}>Cuti Khas</option>
+                  </select>
+                </div>
+              </td>
+            </tr>
+          `;
+        });
+
+        const recordIdsArray = JSON.stringify(student.violations.map(v => v.recordId)).replace(/"/g, '&quot;');
+
+        card.innerHTML = `
+          <div class="notif-summary" onclick="toggleAccordion(this)">
+            <div class="student-info">
+              <h3>${student.namaPelajar} (${student.noMatrik})</h3>
+              <p>Jumlah Kes Melanggar Curfew: <strong>${count} kali</strong></p>
+            </div>
+            <div>
+              <span class="warning-badge ${warningClass}">${warningText}</span>
+            </div>
+          </div>
+          <div class="notif-details">
+            <h4 style="margin: 0 0 10px 0; font-size: 0.9rem; color: #333;">Rekod Kesalahan Curfew:</h4>
+            <table class="details-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Masa Keluar</th>
+                  <th>Masa Masuk</th>
+                  <th>Sebab / Alasan</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${rowsHtml}
+              </tbody>
+            </table>
+            <div class="action-btn-container">
+              <button class="btn-action" onclick="deleteRecord('${key}', ${recordIdsArray})">
+                🗑️ Padam Rekod
+              </button>
+            </div>
+          </div>
+        `;
+
+        container.appendChild(card);
+      });
+    }
+
+    function toggleAccordion(element) {
+      const details = element.nextElementSibling;
+      if (details.style.display === "block") {
+        details.style.display = "none";
+      } else {
+        details.style.display = "block";
+      }
+    }
+
+    // Fungsi menyimpan pilihan dropdown felo
+    function saveFeloRemark(recordId, value) {
+      let feloRemarks = JSON.parse(localStorage.getItem('feloRemarks') || '{}');
+      feloRemarks[recordId] = value;
+      localStorage.setItem('feloRemarks', JSON.stringify(feloRemarks));
+    }
+
+    // Fungsi memadam rekod pelajar
+    function deleteRecord(studentKey, recordIds) {
+      if (confirm(`Adakah anda pasti mahu memadam rekod untuk pelajar ini? Data ini akan dibuang daripada senarai.`)) {
+        let dismissedIds = JSON.parse(localStorage.getItem('dismissedCurfewRecords') || '[]');
+        dismissedIds = dismissedIds.concat(recordIds);
+        localStorage.setItem('dismissedCurfewRecords', JSON.stringify(dismissedIds));
+        fetchNotifRecords();
+      }
+    }
+  </script>
+</body>
+</html>
